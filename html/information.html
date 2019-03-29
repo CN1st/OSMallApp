@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<script type="text/javascript" src="../js/vue.js"></script>
+		<script type="text/javascript" src="../js/vant.js"></script>
+		<script type="text/javascript" src="../js/vue-lazyload.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../js/listener_other.js" ></script>
+		<link rel="stylesheet" href="../css/vant.css" />
+		<style type="text/css">
+			.com-main {
+				background: #FBFBFB;
+				width: 100%;
+				min-height: 800px;
+				height: 100%;
+			}
+			
+			#app1 {
+				z-index: 9999;
+				position: fixed;
+				background: #FF4443;
+				width: 100%;
+			}
+			
+			.com-header {
+				margin-top: 60px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app1">
+			<van-tabs v-model="active">
+				<van-tab title="头条"></van-tab>
+				<van-tab title="视频"></van-tab>
+				<van-tab title="资讯"></van-tab>
+				<van-tab title="问答"></van-tab>
+			</van-tabs>
+		</div>
+		<script type="application/javascript">
+			var vm = new Vue({
+				el: "#app1",
+				data: {
+					active: 2,
+				}
+			})
+		</script>
+		<!--商品资讯-->
+		<div id="app" style="background: #FF4443; width: 100%;height: 100%;">
+			<van-pull-refresh v-model="isLoading" @refresh="onRefresh">
+				<van-row>
+					<!--顶部图片-->
+					<van-col span="24" class="com-header">
+						<div style="width: 90%;height: 55%;border-radius: 20px;padding-left: 20px;">
+							<!--<p>刷新次数: {{ count }}</p>-->
+							<img src="img/information.jpg" style="width: 100%;height: 100%;border-radius: 20px;" />
+						</div>
+					</van-col>
+					<!--中部栏目-->
+					<van-col span="24" class="com-main">
+						<!--咨询商品-->
+						<div style="width: 100%;height: 80px; margin-top: 10px;">
+							<!--商品内容-->
+							<div class="leftDiv" style="width: 70%;height:80px;float: left;">
+								<div style="padding-left: 20px;" v-html="value.Text"></div><br />
+								<span style="padding-left: 20px;">
+									<van-icon name="success" />
+								</span>
+							</div>
+							<!--商品图片-->
+							<div class="rightDiv" style="width: 30%;height:80px;float: left;">
+								<img src="img/information.jpg" style="width: 100%;height: 100%;border-radius: 20px;" />
+							</div>
+						</div>
+					</van-col>
+				</van-row>
+			</van-pull-refresh>
+		</div>
+	</body>
+	<script type="text/javascript">
+		var vm = new Vue({
+			el: "#app",
+			data: {
+				count: 0,
+				isLoading: false,
+				value: "",
+				loading: false,
+				finished: false
+			},
+			methods: {
+				onRefresh() {
+					setTimeout(() => {
+						this.$toast('刷新成功');
+						this.isLoading = false;
+						this.count++;
+					}, 500);
+				}
+			},
+			mounted() {
+ 				ajax({
+					url: "http://dsapi.ysd3g.com/api/InformationDetail",
+					dataType: "jsonp",
+					data: {
+						id: plus.webview.currentWebview().Id
+					},
+					success(res) {
+						vm.value = res;
+					}
+				})
+			}
+		})
+	</script>
+
+</html>

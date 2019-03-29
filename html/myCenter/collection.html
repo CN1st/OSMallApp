@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/address.js"></script>
+		<script type="text/javascript" src="../../js/vue-lazyload.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+		<style>
+			.productList {
+				border: 3px solid blue;
+				border-bottom: 0px;
+				border-top: 0px;
+				border-right: 0px;
+				margin-left: 5px;
+				padding-top: 5px;
+				background: white;
+			}
+			
+			.products {
+				margin-top: 2px;
+				/*height: 100%;*/
+			}
+			
+			.item img {
+				width: 113px;
+				float: left;
+				margin-left: 5px;
+			}
+			
+			.name {
+				color: #000000;
+				font-size: 13px;
+				width: 113px;
+				height: 30px;
+				overflow: hidden;
+				textOverflow: ellipsis;
+				whiteSpace: nowrap;
+				padding-top: 5px;
+			}
+			
+			.searchAll {
+				float: left;
+				margin-top: 6px;
+			}
+			
+			.item1 {
+				height: 90px;
+				margin-top: 5px;
+				background: white;
+			}
+			
+			.item1 img {
+				width: 90px;
+				float: left;
+				margin-left: 5px;
+			}
+			
+			.listName {
+				margin-left: 5px;
+				color: #000000;
+			}
+			
+			.goodsData {
+				background-color: white;
+				margin-top: 10px;
+				height: 35px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app">
+			<van-row>
+				<van-col span="24">
+					<van-nav-bar title="我的收藏" style="background:red;color: white;">
+						<van-icon style="padding-top: 1%; color: white;font-size: 15px;" name="arrow-left" slot="left" @click="returnPage" />
+					</van-nav-bar>
+				</van-col>
+				<van-col span="24">
+					<div class="products">
+						<div class="productList">&nbsp;收藏列表</div>
+						<div style="background: white;">
+							<van-list v-model="loading" :finished="finished" @load="onLoad">
+								<van-swipe-cell class="list" v-for="(pl,index) in productList">
+									<van-cell style="background: white;" v-on:click.capture="skip(pl.GoodsId)">
+										<van-card :desc="'￥' + pl.MarketPrice.toFixed(2)" :title="pl.GoodsName" :thumb="pl.GoodsImageUrl" onerror="this.thumb='../../img/product_default.jpg'"  style="background: white;border: 1px solid #E8E8E8;">
+											<div slot="footer">
+												<van-button type="danger" v-on:click.stop="cancelCol(pl.GoodsId,index)" style="width:80px;height: 40px;" size=""><span style="font-size: 10px;">取消收藏</span></van-button>
+											</div>
+										</van-card>
+									</van-cell>
+								</van-swipe-cell>
+							</van-list>
+						</div>
+				</van-col>
+			</van-row>
+			</div>
+			<script type="text/javascript">
+				Vue.use(VueLazyload);
+				var vm = new Vue({
+					el: '#app',
+					data: {
+						checked: [],
+						data: "",
+						p: 1,
+						productList: [],
+						informationTitle: null,
+						intervalId: null,
+						informationList: [],
+						loading: false,
+						finished: false
+					},
+					methods: {
+						cancelCol(id, index) {//取消收藏
+							this.$dialog.confirm({
+								title: '确认取消',
+								message: '确定要取消收藏吗？'
+							}).then(() => {
+								var key = plus.storage.getItem("key");
+								ajax({
+									url: "http://dsapi.ysd3g.com/api/cancelCollectGoods",
+									dataType: "jsonp",
+									data: {
+										key: key,
+										goodsId: id
+									},
+									success(res) {
+										if(res.Error) {
+											vm.$toast.fail(res.Msg);
+										} else {
+											vm.productList.splice(index, 1);
+											vm.$toast.success("已取消");
+										}
+									}
+								});
+							}).catch(() => {
+								// on cancel
+								this.$toast.fail("取消操作");
+							});
+						},
+						skip(id) {//跳转B类页面
+							plus.webview.create("../ProductDetail.html", "ProductDetail", {}, {
+								Id: id
+							}).show()
+						},
+						returnPage() {
+							plus.webview.hide(plus.webview.currentWebview());
+						},
+						onLoad() {//无线下拉的方法
+							ajax({
+								url: "http://dsapi.ysd3g.com/api/MyGoodsCollectList",
+								dataType: "jsonp",
+								data: {
+									p: vm.p,
+									key: plus.storage.getItem("key")
+								},
+								success(res) {
+									if(res.Data.length > 0) {
+										vm.productList = vm.productList.concat(res.Data);
+										vm.loading = false;
+										vm.p++;
+									} else {
+										vm.loading = false;
+										vm.finished = true;
+									}
+								}
+							});
+						}
+					}
+				})
+			</script>
+	</body>
+
+</html>

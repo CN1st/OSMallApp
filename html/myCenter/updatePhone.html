@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js" ></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js" ></script>
+	</head>
+	<style>
+		.head-updatePhone {
+			background-color: #FF0000;
+			padding-top: 10px;
+			color: white;
+		}
+		
+		.body-updatePhone {
+			padding-top: 10px;
+			background-color: gainsboro;
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar class="head-updatePhone" title="修改手机号码" >
+					<van-icon name="arrow-left" slot="left" style="color: white;" @click="returnPage"></van-icon>
+					<span slot="right" @click="updatePhone" >完成</span>
+				</van-nav-bar>
+			</div>
+
+			<div class="body-updatePhone">
+				<van-cell-group>
+					<van-field v-model="phone" placeholder="请输入您要绑定的新手机号码" />
+				</van-cell-group>
+				<van-field v-model="code" placeholder="6位短信验证码">
+					<van-button slot="button" type="danger" @click="sendCode">发送验证码</van-button>
+				</van-field>
+			</div>
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					phone: "",
+					code: "",
+					key:plus.storage.getItem("key")
+				},
+				methods: {
+					sendCode() {
+						ajax({
+							url: "http://dsapi.ysd3g.com/api/SendChangePhoneCode",
+							dataType: "jsonp",
+							data: {
+								key:vm.key,
+								phone:vm.phone
+							},
+							success(res){
+								if (res.Error) {
+									vm.$toast.fail(res.Msg);
+								} else{
+									vm.$toast.success(res.Code);
+								}
+							}
+						})
+					},
+					updatePhone(){
+						ajax({
+							url:"http://dsapi.ysd3g.com/api/ChangePhone",
+							dataType:"jsonp",
+							data:{
+								key:vm.key,
+								phone:vm.phone,
+								code:vm.code
+							},
+							success(res){
+								console.log(JSON.stringify(res));
+								if (res.Error) {
+									vm.$toast.fail(res.Msg);
+								} else{
+									vm.$toast.success(`修改成功`);
+									console.log(plus.storage.getItem("userData"));
+									var userData = JSON.parse(plus.storage.getItem("userData"));
+									if (localStorage.getItem(userData.Phone)!=null) {
+										localStorage.setItem(vm.phone,localStorage.getItem(userData.Phone));
+									}
+									userData.Phone = vm.phone;
+									plus.storage.setItem("userData",JSON.stringify(userData));
+									plus.webview.getWebviewById("personalData").reload(false);
+									plus.webview.getWebviewById("personal").reload(false);
+									plus.webview.close(plus.webview.currentWebview());
+								}
+							}
+						})
+					},
+					returnPage(){
+						plus.webview.hide(plus.webview.currentWebview());
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

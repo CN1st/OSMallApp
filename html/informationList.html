@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../css/vant.css" />
+		<script type="text/javascript" src="../js/vue.js"></script>
+		<script type="text/javascript" src="../js/vant.js"></script>
+		<script type="text/javascript" src="../js/vue-lazyload.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../js/listener_other.js"></script>
+	</head>
+
+	<body>
+		<div id="app">
+			<van-row>
+				<van-col span="24" class="com-header">
+					<div style="position: fixed; width: 100%;z-index: 999;">
+						<van-nav-bar style="background-color: red; height:70px;line-height: 100px; color: white;" title="资讯列表">
+							<van-icon style="padding-top: 60px; color: white;font-size: 15px;" name="arrow-left" slot="left" @click="returnPage" />
+						</van-nav-bar>
+					</div>
+				</van-col>
+				<van-col span="24" style="margin-top: 70px;">
+					<van-cell-swipe v-for="i in informationList">
+						<van-cell-group>
+							<van-cell :title="i.Title" @click="skipZx(i.Id)"></van-cell>
+						</van-cell-group>
+					</van-cell-swipe>
+				</van-col>
+			</van-row>
+		</div>
+		<script type="text/javascript">
+			var vm = new Vue({
+				el: '#app',
+				data: {
+					informationList: [],
+					p: 1
+				},
+				methods: {
+					returnPage() {
+						plus.webview.close(plus.webview.currentWebview());
+					},
+					skipZx(id) {
+						plus.webview.create("homePage/information.html", "information", {}, {
+							Id: id
+						}).show("slide-in-left");
+					}
+				},
+				mounted() {
+					ajax({
+						url: "http://dsapi.ysd3g.com/api/IndexData",
+						dataType: "jsonp",
+						data: {
+							p: 1
+						},
+						success(res) {
+							if(res.Data.InformationList.length > 0) {
+								vm.informationList = vm.informationList.concat(res.Data.InformationList);
+							}
+						}
+					});
+				}
+			})
+		</script>
+	</body>
+</html>

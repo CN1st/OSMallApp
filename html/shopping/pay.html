@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<link rel="stylesheet" href="../../font/iconfont.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+		<style type="text/css">
+			.xs {
+				border: 2px solid red;
+				margin-left: 5px;
+				border-bottom: 0px;
+				border-top: 0px;
+				border-right: 0px;
+				padding-top: 5px;
+				margin-top: 5px;
+			}
+		</style>
+		<title></title>
+	</head>
+
+	<body>
+		<div id="app">
+			<div style="background-color: #E5E5E5; height: 555px;">
+				<van-nav-bar style="background-color: red; height: 80px; line-height: 100px; color: white;" title="结算">
+					<van-icon style="padding-top: 30px; color: white;font-size: 20px;" name="arrow-left" slot="left" @click="returnPage" />
+				</van-nav-bar>
+				<div style="height: 125%;">
+					<div style="background: white;">
+						<div class="xs">商品清单</div>
+						<van-card v-show="isShow" v-for="(p,index) in order" :num="value" :price="p.GoodsPrice" :desc="p.Name" :thumb="p.GoodsImageUrl" style="background: white;">
+							<div slot="footer">
+								<van-stepper v-model="value" integer :min="1" :max="50" :step="1"></van-stepper>
+							</div>
+						</van-card>
+						<van-card v-show="!isShow" v-for="(p,index) in order" :num="p.BuyCount" :price="p.GoodsPrice" :desc="p.Name" :thumb="p.GoodsImageUrl" style="background: white;">
+						</van-card>
+					</div>
+					<div style="background: white;margin-top: 2%;">
+						<div class="xs">收货地址</div>
+						<div style="padding: 2%;">
+							<table>
+								<van-cell-group>
+									<tr>
+										<td>联系人:</td>
+										<td>
+											<van-field v-text="address.name"></van-field>
+										</td>
+									</tr>
+									<tr>
+										<td>手机号码:</td>
+										<td>
+											<van-field v-text="address.tel"></van-field>
+										</td>
+									</tr>
+									<tr>
+										<td>详细地址:</td>
+										<td>
+											<van-field v-text="address.address"></van-field>
+										</td>
+									</tr>
+								</van-cell-group>
+							</table>
+							<van-cell value="其他收货地址 >" style="padding-left: 30%; color: #B7BCC3;" @click="skipAddress">
+							</van-cell>
+							</a>
+						</div>
+					</div>
+					<div style="background: white;margin-top: 2%;">
+						<div class="xs">支付方式</div>
+						<van-radio-group v-model="radio" v-model="selcet">
+							<van-cell-group>
+								<van-cell title="支付宝" clickable @click="radio = 'alpay'" @click="selcet='1'">
+									<img src="../../img/pay/pay_icon_zfb.png" slot="icon" style="width: 25px; height: 25px;" />
+									<van-radio name="alipay"></van-radio>
+								</van-cell>
+								<van-cell title="微信支付" clickable @click="radio = 'wxpay'" @click="selcet='1'">
+									<img src="../../img/pay/pay_icon_wx.png" slot="icon" style="width: 25px; height: 25px;" />
+									<van-radio name="wxpay"></van-radio>
+								</van-cell>
+							</van-cell-group>
+						</van-radio-group>
+					</div>
+				</div>
+			</div>
+			<van-tabbar style="height: 10%;">
+				<van-tabbar-item><span>合计:</span><span style="color: red; font-size: 20px;" v-text="totalMoney"></span><span>元</span></van-tabbar-item>
+				<van-tabbar-item style="background-color: #FF4444;" @click="pay">
+					<span style="color: white;">去支付</span>
+				</van-tabbar-item>
+			</van-tabbar>
+		</div>
+		<script type="text/javascript">
+			var key = plus.storage.getItem("key");
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					value: 1,
+					radio: "alipay",
+					order: [],
+					totalPrice: 0,
+					address: {},
+					select: '1',
+					isShow: plus.webview.currentWebview().isShow,
+					orderId: 0,
+					jsonData: {},
+					buyCount: 0
+				},
+				mounted() {
+					var show = plus.webview.currentWebview().isShow
+					if(show) { //判断是从那里传来的数据
+						ajax({//B类页面
+							url: "http://dsapi.ysd3g.com/API/GoodsDetail",
+							dataType: "jsonp",
+							data: {
+								gId: plus.webview.currentWebview().pid
+							},
+							success(res) {
+								var d = {
+									GoodsPrice: res.Detail.RealPrice,
+									GoodsImageUrl: res.Detail.CoverImage,
+									BuyCount: 1,
+									Name: res.Detail.Name
+								}
+								vm.order = vm.order.concat(d);
+							}
+						});
+					} else {//购物车
+						var pids = plus.webview.currentWebview().pids
+						var Id;
+						var Name;
+						var GoodsImageUrl;
+						var GoodsPrice;
+						for(var i = 0; i < pids.length; i++) {
+							ajax({
+								url: "http://dsapi.ysd3g.com/API/GoodsDetail",
+								dataType: "jsonp",
+								data: {
+									gId: pids[i].goodsId
+								},
+								success(res) {
+									Id = res.Detail.Id;
+									Name = res.Detail.Name;
+									GoodsImageUrl = res.Detail.CoverImage;
+									GoodsPrice = res.Detail.RealPrice;
+									for(var j = 0; j < pids.length; j++) {
+										if(Id == pids[j].goodsId) {
+											vm.buyCount = pids[j].buyCount;
+										}
+									}
+									vm.jsonData = {
+										"Id": Id,
+										"Name": Name,
+										"GoodsImageUrl": GoodsImageUrl,
+										"GoodsPrice": GoodsPrice,
+										"BuyCount": vm.buyCount,
+									}
+									vm.order = vm.order.concat(vm.jsonData);
+								}
+							});
+						}
+					}
+					if(plus.webview.currentWebview().address) {//判断是否是默认地址
+						ajax({
+							url: "http://dsapi.ysd3g.com/api/MyDefaultAddress",
+							dataType: "jsonp",
+							data: {
+								key: key
+							},
+							success(res) {
+								vm.address = res;
+							}
+						});
+					} else {
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/EditLoadingData",
+							dataType: "jsonp",
+							data: {
+								key: plus.storage.getItem("key"),
+								addressId: plus.webview.currentWebview().addressId
+							},
+							success(res) {
+								vm.address = {
+									id: res.Data.Id,
+									name: res.Data.Name,
+									tel: res.Data.Phone,
+									address: res.Data.ProvinceCode + "/" + res.Data.CityCode + "/" + res.Data.DistrictCode + res.Data.DetailedAddress
+								};
+							}
+						})
+					}
+				},
+				computed: {
+					totalMoney() {
+						this.totalPrice = 0;
+						if(this.isShow) {
+							this.totalPrice = this.order[0].GoodsPrice * this.value
+							return this.totalPrice;
+						} else {
+							for(var i = 0; i < this.order.length; i++) {
+								this.totalPrice += this.order[i].GoodsPrice * this.order[i].BuyCount
+							}
+							return this.totalPrice
+						}
+					}
+				},
+				methods: {
+					returnPage() {//返回上一个页面
+						plus.webview.close(plus.webview.currentWebview());
+					},
+					skipAddress() {
+						if(this.isShow) {
+							plus.webview.create("../myCenter/myShippingAddressList.html", "myShippingAddress", {}, {
+								isShow_address: true,
+								pid: plus.webview.currentWebview().pid,
+								isShow: this.isShow
+							}).show();
+						} else {
+							plus.webview.create("../myCenter/myShippingAddressList.html", "myShippingAddress", {}, {
+								isShow_address: true,
+								pids: plus.webview.currentWebview().pids,
+								isShow: this.isShow
+							}).show();
+						}
+					},
+					pay() {//支付第一步 生成订单
+						var shoppingCartJsonStr = [];
+						if(this.isShow) {
+							shoppingCartJsonStr = [{
+								goodsId: plus.webview.currentWebview().pid,
+								buyCount: this.value
+							}]
+						} else {
+							shoppingCartJsonStr = plus.webview.currentWebview().pids
+						}
+						var toast = vm.$toast.loading({
+							duration: 0, // 持续展示 toast
+							forbidClick: true, // 禁用背景点击
+							message: '正在生成订单'
+						});
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/GeneratingOrder",
+							dataType: "jsonp",
+							data: {
+								key: plus.storage.getItem("key"),
+								shoppingCartJsonStr: JSON.stringify(shoppingCartJsonStr)
+							},
+							success(res) {
+								if(res.Error) {
+									vm.$toast.fail(res.Msg);
+								} else {
+									vm.orderId = res.OrderId
+									localStorage.setItem(res.orderId, vm.address.id);
+									if(!vm.isShow) {
+										var phone = JSON.parse(plus.storage.getItem("userData")).Phone
+										var shopCart = JSON.parse(localStorage.getItem(phone));
+										for(var j = 0; j < shopCart.length; j++) {
+											for(var k = 0; k < vm.order.length; k++) {
+												if(vm.order[k].Id = shopCart[j].goodsId) {
+													shopCart.splice(j, 1);
+												}
+											}
+										}
+										var sc = JSON.stringify(shopCart)
+										localStorage.setItem(phone, sc);
+										plus.webview.getWebviewById("shoppingCart").reload(false);
+									}
+									vm.$toast.clear();
+									payNext();
+								}
+							}
+						});
+					}
+				}
+			});
+
+			function payNext() { //进行支付
+				ajax({
+					url: "http://dsapi.ysd3g.com/api/OrderPay",
+					dataType: "jsonp",
+					data: {
+						key: key,
+						oId: vm.orderId,
+						payType: vm.select,
+						addressIdx: vm.address.id,
+						money: vm.totalPrice
+					},
+					success(res) {
+						if(res.Error) {
+							vm.$toast.fail(`未知原因失败`);
+						} else {
+							var payment = "";
+							plus.payment.getChannels(function(s) { //
+								channels = s;
+								for(var i = 0; i < channels.length; i++) {
+									if(channels[i].id == vm.radio) {
+										payment = channels[i];
+									}
+								}
+								plus.payment.request(payment, res.strJson, function() {
+									vm.$toast.success("支付操作成功！");
+									localStorage.removeItem(orderId);
+									plus.webview.create("paysuccess.html", "paysuccess", {}, {
+										totalPrice: vm.totalPrice,
+										oId: vm.orderId
+									}).show("slide-in-left");
+								}, function(e) {
+									vm.$toast.fail(`支付失败：${e.code}`);
+								});
+							}, function(e) {
+								vm.$toast.fail(`获取支付通道列表失败：${e.message}`);
+							});
+						}
+					}
+				})
+			}
+		</script>
+	</body>
+
+</html>

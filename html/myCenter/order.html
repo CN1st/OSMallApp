@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>我的订单</title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script type="text/javascript" src="../../js/vue-lazyload.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+	</head>
+	<style>
+		#s1 {
+			font-size: 5px;
+			margin-left: 35%;
+		}
+		
+		.pl {
+			margin-left: 58%;
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<van-row>
+				<van-col span="24" class="com-header">
+					<van-nav-bar style="background-color: red; height:70px;line-height: 100px; color: white;" title="我的订单">
+						<van-icon style="padding-top: 60px; color: white;font-size: 15px;" name="arrow-left" slot="left" @click="returnPage" />
+					</van-nav-bar>
+				</van-col>
+				<van-col span="24">
+					<van-list v-model="loading" :finished="finished" @load="onLoad">
+						<van-panel v-show="isShow==false" :title=`订单编号${order.Code}` :status="order.StatusName" v-for="(order,index) in list">
+							<div>
+								<van-card v-for="p in order.GoodsList" :num="p.BuyCount" :price="p.GoodsPrice" :title="p.Name" :thumb="p.GoodsImageUrl"></van-card>
+								<span id="s1">共<span v-text="getTotalCount(index)"></span>件商品，合计：￥<span v-text="getTotalMoney(index)"></span>(含运费￥0.00)</span>
+							</div>
+							<div slot="footer">
+								<div class="pl">
+									<van-button v-if="'未支付'==order.StatusName" size="small" @click="pay(order.Id)">支付</van-button>
+									<van-button v-else-if="'支付成功'==order.StatusName" size="small">确认收货</van-button>
+									<van-button v-else="'已收货'==order.StatusName" size="small">评价</van-button>
+									<van-button size="small" type="danger" @click="delOrder(order.Id,index)">删除订单</van-button>
+								</div>
+							</div>
+						</van-panel>
+					</van-list>
+					<div v-show="isShow">
+						<div style="text-align: center;color: #C9C9C9;font-size: 30px;margin-top: 200px;">
+							<van-icon name="pending-evaluate" />
+						</div>
+						<div style="color:#C9C9C9 ;text-align: center;">暂时还没有任何订单</div>
+					</div>
+				</van-col>
+				<van-col class="com-footer">
+					<van-actionsheet v-model="showAlert" :actions="actions" @select="onSelect" @cancel="onCancel" cancel-text="取消"></van-actionsheet>
+				</van-col>
+			</van-row>
+		</div>
+		<script>
+			var key = plus.storage.getItem("key");
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					list: [],
+					isShow: true,
+					order: [],
+					GoodsList: [],
+					loading: false,
+					finished: false,
+					p: 1,
+					count: 0,
+					showAlert: false,
+					actions: [{
+							id: 1,
+							name: '支付宝',
+							pt: "alipay"
+						},
+						{
+							id: 2,
+							name: '微信',
+							pt: "wxpay"
+						}
+					],
+					payType: 1,
+					pt: "alipay",
+					orderId: ""
+				},
+				methods: {
+					returnPage() {
+						plus.webview.close("order");
+					},
+					delOrder(oId,index) {//删除订单
+						vm.$dialog.confirm({
+							title: "确认删除",
+							message: "确认要删除此订单吗？"
+						}).then(() => {
+							ajax({
+								url: "http://dsapi.ysd3g.com/api/DeleteOrder",
+								dataType: "jsonp",
+								data: {
+									Key: key,
+									oId: oId
+								},
+								success(res) {
+									if(!res.Error) {
+										vm.list.splice(index, 1);
+										vm.$toast.success("已删除");
+									} else {
+										vm.$toast.fail(res.Msg);
+
+									}
+								}
+							})
+						}).catch(() => {
+							vm.$toast.fail("已取消");
+						})
+					},
+					onSelect(item) {//选择支付宝还是微信支付
+						if(item.id == 1) {
+							this.payType = item.id
+							this.pt = item.pt
+						} else {
+							this.payType = item.id
+							this.pt = item.pt
+						}
+						this.showAlert = false
+						payNext();
+					},
+					onCancel() {
+						this.$toast.fail(`取消支付`);
+					},
+					pay(orderId) {
+						this.showAlert = true;
+						this.orderId = orderId;
+					},
+					onLoad() {//无线下拉列表显示订单
+						ajax({
+							url: "http://dsapi.ysd3g.com/api/MyOrderList",
+							dataType: "jsonp",
+							data: {
+								key: key,
+								p: vm.p
+							},
+							success(res) {
+								if(res.Data.length > 0) {
+									vm.list = vm.list.concat(res.Data);
+									vm.isShow = false;
+									vm.loading = false;
+									vm.p++;
+								} else {
+									vm.loading = false;
+									vm.finished = true;
+									vm.$toast.fail(`服务器端没有数据了`);
+									if(vm.list.length <= 0) {
+										vm.isShow = true;
+									}
+								}
+							}
+						});
+					},
+					getTotalCount(index) {//获取订单里头的总数量
+						var count = 0;
+						for(var i = 0; i < this.list[index].GoodsList.length; i++) {
+							count += this.list[index].GoodsList[i].BuyCount;
+						}
+						return count;
+					},
+					getTotalMoney(index) {//获取订单里头的总价格
+						var money = 0;
+						for(var i = 0; i < this.list[index].GoodsList.length; i++) {
+							money += this.list[index].GoodsList[i].BuyCount*this.list[index].GoodsList[i].GoodsPrice;
+						}
+						return money;
+					}
+				}
+			})
+
+			function payNext() {//开始支付
+				ajax({
+					url: "http://dsapi.ysd3g.com/api/PayOrderDetail",
+					dataType: "jsonp",
+					data: {
+						key: key,
+						oId: vm.orderId
+					},
+					success(res) {
+						var addressId = localStorage.getItem(vm.orderId);
+						ajax({
+							url: "http://dsapi.ysd3g.com/api/OrderPay",
+							dataType: "jsonp",
+							data: {
+								key: key,
+								oId: vm.orderId,
+								payType: vm.payType,
+								addressIdx: addressId,
+								money: res.Data.TotalPrice
+							},
+							success(res) {
+								if(res.Error) {
+									vm.$toast.fail(`未知原因失败`);
+								} else {
+									var payment = "";
+									plus.payment.getChannels(function(s) { //
+										channels = s;
+										for(var i = 0; i < channels.length; i++) {
+											if(channels[i].id == vm.pt) {
+												payment = channels[i];
+											}
+										}
+										plus.payment.request(payment, res.strJson, function() {
+											console.log("支付操作成功！");
+											localStorage.removeItem(orderId)
+											plus.webview.create("paysuccess.html", "paysuccess", {}, {
+												totalPrice: res.Data.TotalPrice,
+												oId: orderId
+											}).show("slide-in-left");
+										}, function(e) {
+											vm.$toast.fail(`支付失败：${e.code}`);
+										});
+									}, function(e) {
+										vm.$toast.fail(`获取支付通道列表失败：${e.message}`);
+									});
+								}
+							}
+						})
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

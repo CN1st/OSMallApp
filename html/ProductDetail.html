@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../css/vant.css" />
+		<link rel="stylesheet" href="../font/iconfont.css" />
+		<script type="text/javascript" src="../js/vue.js"></script>
+		<script type="text/javascript" src="../js/vant.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../js/listener_other.js"></script>
+		<style type="text/css">
+			.express {
+				color: #999;
+				padding: 20px 0px 5px 0px;
+			}
+			
+			.vol-class {
+				color: red;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app" style="overflow-x: hidden;overflow-y: auto;">
+			<van-row>
+				<van-col span="24">
+					<van-cell-group>
+						<van-cell icon="arrow-left" @click="returnPage">
+							<van-swipe :autoplay="3000">
+								<van-swipe-item v-for="img in detail.SwipeImages">
+									<img :src="img.src" width="100%" onerror="this.src='../img/detail_default.jpg'" />
+								</van-swipe-item>
+							</van-swipe>
+						</van-cell>
+						<van-cell>
+							<div style="font-size: 18px; font-weight: bolder;" v-text="detail.Name"></div>
+							<div style="font-size: 24px; color: red; padding-top: 20px;">￥<span v-text="detail.MarketPrice"></span></div>
+							<van-col span="10" class="express">快递：免运费</van-col>
+							<van-col span="14" class="express">销量290</van-col>
+						</van-cell>
+						<van-cell style="background-color: #F3F3F6;">
+							<van-col class="vol-class" span="8">☞正品保证</van-col>
+							<van-col class="vol-class" span="8">☞极速退款</van-col>
+							<van-col class="vol-class" span="8">☞两天内发货</van-col>
+						</van-cell>
+					</van-cell-group>
+					<div style="height: 15px;background-color: #E8E8E8;"></div>
+					<van-panel title="商品详情">
+						<van-list>
+							<van-cell-swipe v-for="pd in proDe">
+								<van-cell>
+									<img :src="pd" onerror="this.src='../img/product_default.jpg'"  style="width: 100%;" />
+								</van-cell>
+							</van-cell-swipe>
+						</van-list>
+					</van-panel>
+
+				</van-col>
+				<van-col span="24">
+					<van-goods-action>
+						<van-goods-action-mini-btn v-show="isCollected" style="width: 25%;" icon="like" text="已收藏" @click="cancelCollect"></van-goods-action-mini-btn>
+						<van-goods-action-mini-btn v-show="!isCollected" style="width: 25%;" icon="like-o" text="收藏" @click="joinCollection"></van-goods-action-mini-btn>
+						<van-goods-action-big-btn @click="joinCar" v-if="addShopcartCount==0">加入购物车</van-goods-action-big-btn>
+						<van-goods-action-big-btn @click="joinCar" v-else>加入购物车X<span v-text="addShopcartCount"></span></van-goods-action-big-btn>
+						<van-goods-action-big-btn text="立即购买" @click="goShopping" primary></van-goods-action-big-btn>
+					</van-goods-action>
+
+				</van-col>
+			</van-row>
+		</div>
+		<script type="text/javascript">
+			var key = plus.storage.getItem("key");
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					detail: "",
+					isCollected: false,
+					phone: "",
+					addShopcartCount: 0,
+					pid: 0,
+					proDe: ["../img/temp/dt_1.png", "../img/temp/dt_2.png", "../img/temp/dt_3.png", "../img/temp/dt_4.png", "../img/temp/dt_5.png"]
+				},
+				methods: {
+					joinCar() { //添加购物车
+						if(key == null) {
+							plus.webview.create("main/login.html", "login").show();
+						} else {
+							vm.$toast.success("加入购物车");
+							vm.phone = JSON.parse(plus.storage.getItem("userData")).Phone;
+							var goodsArr = [{
+								goodsId: vm.detail.Id,
+								buyCount: 1
+							}];
+							var goodsObj = {
+								goodsId: vm.detail.Id,
+								buyCount: 1
+							};
+							var newArr;
+							if(localStorage.getItem(vm.phone) == null) { //如果购物车里面没有任何东西
+								localStorage.removeItem(vm.phone);
+								localStorage.setItem(vm.phone, JSON.stringify(goodsArr));
+								vm.addShopcartCount = 1; //显示此商品在购物车内的数量
+							} else { //购物车里有东西
+								newArr = JSON.parse(localStorage.getItem(vm.phone)); //购物车里面的商品
+								for(var i = 0; i < newArr.length; i++) { //遍历购物车
+									if(newArr[i].goodsId == vm.detail.Id) { //如果购物车里面有此商品
+										newArr[i].buyCount += 1; //商品数量+1
+										localStorage.removeItem(vm.phone);
+										localStorage.setItem(vm.phone, JSON.stringify(newArr)); //
+										vm.addShopcartCount = newArr[i].buyCount; //显示此商品在购物车内的数量
+										return;
+									}
+								}
+								//购物车里没有此商品
+								newArr.push(goodsObj); //向购物车内添加商品
+								localStorage.removeItem(vm.phone);
+								localStorage.setItem(vm.phone, JSON.stringify(newArr)); //
+								vm.addShopcartCount = 1; //显示此商品在购物车内的数量
+							}
+						}
+					},
+					goShopping() { //立即购买
+						if(key == null) {
+							plus.webview.create("main/login.html", "login").show();
+						} else {
+							plus.webview.create("shopping/pay.html", "pay", {}, {
+								pid: this.pid,
+								isShow: true,
+								address: true
+							}).show();
+						}
+					},
+					joinCollection() { //加入收藏
+						if(key == null) {
+							plus.webview.create("main/login.html", "login").show();
+						} else {
+							ajax({
+								url: "http://dsapi.ysd3g.com/API/CollectGoods",
+								dataType: "jsonp",
+								data: {
+									key: key,
+									goodsId: vm.detail.Id
+								},
+								success(res) {
+									if(!res.Error) {
+										vm.$toast.success(`收藏成功`);
+										vm.isCollected = true;
+									} else {
+										vm.$toast.success(res.Msg);
+									}
+								}
+							});
+						}
+					},
+					cancelCollect() {
+						//取消收藏
+						var key = plus.storage.getItem("key");
+						ajax({
+							url: "http://dsapi.ysd3g.com/api/cancelCollectGoods",
+							dataType: "jsonp",
+							data: {
+								key: key,
+								goodsId: vm.detail.Id
+							},
+							success(res) {
+								if(!res.Error) {
+									vm.$toast.success("已取消收藏");
+									vm.isCollected = false;
+								} else {
+									vm.$toast.fail(res.Msg);
+								}
+							}
+						});
+					},
+					returnPage() {
+						plus.webview.hide(plus.webview.currentWebview());
+					}
+				},
+				mounted() {
+					var gid = plus.webview.currentWebview().Id
+					ajax({
+						url: "http://dsapi.ysd3g.com/API/GoodsDetail",
+						dataType: "jsonp",
+						data: {
+							gId: gid
+						},
+						success(res) {
+							vm.detail = res.Detail;
+							vm.pid = res.Detail.Id;
+						}
+					});
+					if(plus.storage.getItem("key") != null) {//如果key值不为空查看是否已收藏
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/MyGoodsCollectList",
+							dataType: "jsonp",
+							data: {
+								p: 1,
+								key: plus.storage.getItem("key")
+							},
+							success(res) {
+								for(var i = 0; i < res.Data.length; i++) {
+									if(res.Data[i].GoodsId == gid) {
+										vm.isCollected = true;
+									}
+								}
+							}
+						})
+					}
+					var spg = localStorage.getItem(JSON.parse(plus.storage.getItem("userData")).Phone); //购物车内的商品
+					if(spg != null) {
+						var shopcartGoods = JSON.parse(localStorage.getItem(JSON.parse(plus.storage.getItem("userData")).Phone)); //购物车里面的商品
+						for(var i = 0; i < shopcartGoods.length; i++) { //遍历购物车
+							if(shopcartGoods[i].goodsId == gid) { //如果购物车里面有此商品
+								this.addShopcartCount = shopcartGoods[i].buyCount;
+							}
+						}
+					}
+				}
+			});
+		</script>
+
+	</body>
+
+</html>

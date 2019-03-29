@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../css/vant.css" />
+		<link rel="stylesheet" href="../css/chapter6.css" />
+		<link rel="stylesheet" href="../font/iconfont.css" />
+		<script type="text/javascript" src="../js/vue.js"></script>
+		<script type="text/javascript" src="../js/vant.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../js/listener_other.js" ></script>
+		<style type="text/css">
+			.pDiv {
+				background: whitesmoke;
+				margin-top: 2px;
+			}
+			
+			.font-color {
+				color: #808080;
+			}
+			
+			.title-style {
+				color: #103E5C;
+				font-size: 16px;
+				display: inline-block;
+				width: 100%;
+				height: 35px;
+				overflow: hidden;
+				textOverflow: ellipsis;
+				whiteSpace: nowrap;
+			}
+			
+			.xianshi {
+				width: 48%;
+				background: white;
+				float: left;
+				margin-left: 1%;
+				margin-top: 2%;
+				overflow: auto;
+			}
+			
+			img {
+				width: 100%;
+				height: 60%
+			}
+			
+			.buju {
+				position: fixed;
+				margin-left: 22%;
+				padding-top:10px;
+				height: 500px;
+				overflow: auto;
+			}
+		</style>
+	</head>
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-search style="background:#FF0000 ;height:60px;" v-model="value" placeholder="请输入搜索关键词" show-action @search="onSearch">
+					<div slot="action" @click="onSearch">
+						<van-icon name="chat" style="padding-left: 10px;padding-top: 10px;color:white;font-size: 20px;" />
+					</div>
+				</van-search>
+			</div>
+			<div style="width: 100%">
+				<div >
+					<div class="xianshi" v-for="product in goods">
+						<img :src="product.GoodsImageUrl" onerror="this.src='../img/product_default.jpg'" / @click="skip(product.Id)"><br />
+						<span class="title-style" v-text="product.Name"></span><br />
+						<span><small style="color: red;">￥</small><strong style="color: red;" v-text="product.MarketPrice"></strong></span><br />
+						<span class="font-color"><small v-text="product.VirtualSaleCount"></small>&nbsp;&nbsp;<small>销量</small></span><br />
+						<span class="font-color"><small v-text="product.BrowseCount"></small>&nbsp;&nbsp;&nbsp;&nbsp;<small>次浏览</small></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		var vm = new Vue({
+			el: "#app",
+			data: {
+				value: "",
+				activeKey: 0,
+				category: [],
+				goods: [],
+				page: 1
+			},
+			"mounted": function() {
+				this.value=plus.webview.currentWebview().value
+				ajax({
+						url: "http://dsapi.ysd3g.com/api/GoodsSearch",
+						dataType: "jsonp",
+						data: {
+							name:plus.webview.currentWebview().value
+						},
+						"success": function(res) {
+							if(res.Data.length > 0) {
+								vm.goods = res.Data;
+							} else {
+								vm.$toast.fail({
+									message: "没有数据",
+									duration: 500
+								});
+							}
+						}
+					})
+			},
+			methods: {
+				"onSearch": function() {
+					this.$toast(this.value);
+				},
+				"clickTab": function(pId, key) {
+					this.activeKey = key;
+					this.page = 1;
+					
+					ajax({
+						url: "http://dsapi.ysd3g.com/api/GoodsByCategoryId",
+						dataType: "jsonp",
+						data: {
+							typeId: pId,
+							p: vm.page
+						},
+						"success": function(res) {
+							if(res.Data.length > 0) {
+								vm.goods = res.Data;
+							} else {
+								vm.$toast.success({
+									message: "暂时没有数据",
+									duration: 500
+								});
+							}
+						}
+					});
+				},
+				onSearch() {
+					ajax({
+						url: "http://dsapi.ysd3g.com/api/GoodsSearch",
+						dataType: "jsonp",
+						data: {
+							name: vm.value
+						},
+						"success": function(res) {
+							if(res.Data.length > 0) {
+								vm.goods = res.Data;
+							} else {
+								vm.$toast.fail({
+									message: "没有数据",
+									duration: 500
+								});
+							}
+						}
+					})
+				},
+				skip(id){
+					plus.webview.create("ProductDetail.html","ProductDetail",{},{Id:id}).show("slide-in-left");
+				}
+			}
+		})
+	</script>
+</html>

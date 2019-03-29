@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>待评论订单</title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script type="text/javascript" src="../../js/vue-lazyload.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js" ></script>
+	</head>
+	<style>
+		#s1 {
+			font-size: 5px;
+			margin-left: 35%;
+		}
+		
+		.pl {
+			margin-left: 80%;
+			border-radius: 100px;
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<van-row>
+				<van-col span="24" class="com-header">
+					<van-nav-bar style="background-color: red; height:70px;line-height: 100px; color: white;" title="我的订单">
+						<van-icon style="padding-top: 60px; color: white;font-size: 15px;" name="arrow-left" slot="left" @click="returnPage" />
+					</van-nav-bar>
+				</van-col>
+				<van-col span="24">
+						<van-panel v-show="isShow==false" title="订单号:201812898" :status="order.StatusName" v-for="order in list">
+							<van-card v-for="p in order.GoodsList" :num="p.BuyCount" :price="p.GoodsPrice" :title="p.Name" :thumb="p.GoodsImageUrl"></van-card>
+							<span id="s1">共<span v-text="order.GoodsList.length"></span>件商品，合计：￥123123(含运费￥0.00)</span>
+							<div slot="footer">
+								<van-button size="small" class="pl">评价</van-button>
+							</div>
+						</van-panel>
+					<div v-show="isShow">
+						<div style="text-align: center;color: #C9C9C9;font-size: 30px;margin-top: 200px;">
+							<van-icon name="pending-evaluate" />
+						</div>
+						<div style="color:#C9C9C9 ;text-align: center;">暂无待评论商品</div>
+					</div>
+				</van-col>
+			</van-row>
+		</div>
+		<script>
+			var key = plus.storage.getItem("key");
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					key: "",
+					page: 1,
+					list: "",
+					isShow: true
+				},
+				mounted() {
+					ajax({
+						url: "http://dsapi.ysd3g.com/api/MyOrderList",
+						dataType: "jsonp",
+						data: {
+							key: key,
+							p: 1,
+							status: 16
+						},
+						success(res) {
+							if(res.Data.length > 0) {
+								alert(JSON.stringify(res));
+								vm.list = res.Data;
+								vm.isShow = false;
+								console.log(JSON.stringify(res));
+							} else {
+								vm.isShow = true;
+							}
+						}
+					})
+				},
+				methods: {
+					returnPage() {
+						plus.webview.hide(plus.webview.currentWebview());
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

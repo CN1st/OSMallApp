@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js" ></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js" ></script>
+	</head>
+	<style>
+		.head-uName {
+			background-color: #FF0000;
+			padding-top: 10px;
+			color: white;
+		}
+		
+		.body-uName {
+			padding-top: 10px;
+			background-color: gainsboro;
+		}
+		
+	</style>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar class="head-uName" title="修改昵称">
+					<van-icon name="arrow-left" slot="left" style="color: white;" @click="returnPage"></van-icon>
+					<span slot="right" style="color: white;" @click="save">保存</span>
+				</van-nav-bar>
+			</div>
+
+			<div class="body-uName">
+				<van-cell-group>
+					<van-field v-model="nickName"/>
+				</van-cell-group>
+			</div>
+
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					nickName:plus.webview.currentWebview().nickName
+				},
+				methods:{
+					save(){
+						ajax({
+							url:"http://dsapi.ysd3g.com/API/ChangeNickName",
+							dataType:"jsonp",
+							data:{
+								key:plus.storage.getItem("key"),
+								nickName:vm.nickName
+							},
+							success(res){
+								if (res.Error) {
+									vm.$toast.fail(res.Msg);
+								} else{
+									var userData = JSON.parse(plus.storage.getItem("userData"));
+									userData.NickName = vm.nickName;
+									plus.storage.setItem("userData",JSON.stringify(userData));
+									plus.webview.getWebviewById("personalData").reload(false);
+									plus.webview.getWebviewById("personal").reload(false);
+									plus.webview.close(plus.webview.currentWebview());
+								}
+							}
+						})
+					},
+					returnPage(){
+						plus.webview.close(plus.webview.currentWebview());
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

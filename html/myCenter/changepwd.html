@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js" ></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js" ></script>
+	</head>
+	<style>
+		.head {
+			background-color: red;
+			padding-top: 10px;
+			color: white;
+		}
+		
+		.min {
+			padding-top: 15px;
+			background-color: gainsboro;
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar class="head" title="修改登录密码" right-text="确认修改">
+					<van-icon name="arrow-left" slot="left" style="color: white;" @click="returnPage"></van-icon>
+					<span slot="right" style="color: white;" @click="updatePwd">确认修改</span>
+				</van-nav-bar>
+			</div>
+			<div>
+				<van-cell-group class="min">
+					<van-field v-model="phoneCode" placeholder="6位短信验证码">
+						<van-button slot="button" type="danger" @click="sendCode">发送验证码</van-button>
+					</van-field>
+					<van-cell-group>
+						<van-field type="password" v-model="password"  placeholder="请输入新的登录密码"></van-field>
+					</van-cell-group>
+					<van-cell-group>
+						<van-field type="password" v-model="reqpassword" placeholder="再次输入新的登录密码"></van-field>
+					</van-cell-group>
+				</van-cell-group>
+				<h5><van-icon name="info-o"/>系统将会向您绑定的手机号码发送一条短信.</h5>
+			</div>
+		</div>
+		<script type="text/javascript ">
+			var key = plus.storage.getItem("key");
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					phoneCode: "",
+					password: "",
+					reqpassword: ""
+				},
+				methods: {
+					sendCode() {//发送验证码
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/SendChangePasswordCode",
+							dataType: "jsonp",
+							data: {
+								key:key
+							},
+							success(res) {
+								if (res.Error) {
+									vm.$toast.fail(`发送失败`);
+								} else{
+									vm.$toast.success(`验证码已发送,请注意查收`);
+									vm.$toast(res.Code);
+								}
+							}
+						})
+					},
+					updatePwd(){//修改密码
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/ChangePassword",
+							dataType: "jsonp",
+							data: {
+								key:key,
+								password:vm.password,
+								phoneCode:vm.phoneCode
+							},
+							success(res) {
+								if (res.Error) {
+									vm.$toast.fail(`修改失败`);
+								} else{
+									plus.webview.create("../main/login.html","login").show("slide-in-left");
+								}
+							}
+						})
+					},
+					returnPage(){
+						plus.webview.hide(plus.webview.currentWebview());
+					}
+				}
+
+			});
+		</script>
+	</body>
+
+</html>

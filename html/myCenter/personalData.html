@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<link rel="stylesheet" href="../../css/chapter6.css" />
+		<link rel="stylesheet" href="../../font/iconfont.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+		<style>
+			.com-title {
+				background-color: #FF0000;
+				color: white;
+			}
+			
+			img {
+				width: 35px;
+				height: 35px;
+				border-radius: 50%;
+				border: 1px solid #888888;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app">
+			<van-rows>
+				<van-col span="24">
+					<van-nav-bar title="个人资料" class="com-title">
+						<van-icon style="padding-top: 2%; color: white;font-size: 15px;" name="arrow-left" slot="left" @click="returnPage" />
+					</van-nav-bar>
+				</van-col>
+				<van-col span="24" style="margin-top: 3%;">
+					<van-cell-group>
+						<van-cell is-link value="更换头像" @click="showAlert = true" style="padding-top: 15px;" center>
+							<img :src="imgUrl" style="width: 55px; height: 55px; border: solid 1px lightgray; border-radius: 80%;" slot="title" />
+						</van-cell>
+					</van-cell-group>
+				</van-col>
+
+				<van-col span="24">
+					<van-cell-group style="margin-top: 3%;">
+						<van-cell title="昵称" is-link :value="userData.NickName" @click="updateName"></van-cell>
+						<van-cell title="手机号码" is-link :value="userData.Phone" @click="updatePhone"></van-cell>
+					</van-cell-group>
+				</van-col>
+				<van-col class="com-footer">
+					<van-actionsheet v-model="showAlert" :actions="actions" @select="onSelect" @cancel="onCancel" cancel-text="取消"></van-actionsheet>
+				</van-col>
+			</van-rows>
+		</div>
+	</body>
+	<script type="text/javascript">
+		var userData1 = JSON.parse(plus.storage.getItem("userData"));
+		var vm = new Vue({
+			el: "#app",
+			data: {
+				userData: userData1,
+				actions: [{
+						id: 1,
+						name: '拍照'
+					},
+					{
+						id: 2,
+						name: '从相册选取'
+					}
+				],
+				showAlert: false,
+				imgUrl: userData1.AvatarImage,
+				userKey: plus.storage.getItem("key")
+			},
+			methods: {
+				onSelect(item) { //修改头像
+					if(item.id == 1) {
+						var  cmr  =  plus.camera.getCamera();    
+						cmr.captureImage(function (p) {         
+							plus.io.resolveLocalFileSystemURL(p,  function(entry) {             
+								var imgUrl = entry.toLocalURL();
+								vm.$dialog.confirm({
+									title: '提示',
+									message: '您确定上传该图片作为头像吗?'
+								}).then(() => {
+									var toast = vm.$toast.loading({
+										duration: 0,
+										forbidClick: true,
+										message: '正在上传'
+									});
+									var task = plus.uploader.createUpload("http://dsapi.ysd3g.com/api/uploadavatarimage?key=" + vm.userKey + "", {
+											method: "POST",
+											blocksize: 204800,
+											priority: 100
+										}, //最大上传大小200k,任务优先级100
+										function(t, status) {
+											//上传成功
+											if(status == 200) {
+												var responseText = JSON.parse(task.responseText);
+												//plus.storage.setItem("imgUrl", responseText.AvatarImage);//头像上传成功重新赋值
+
+												var userData = JSON.parse(plus.storage.getItem("userData"));
+												userData.AvatarImage = responseText.AvatarImage; //头像上传成功重新赋值
+												plus.storage.setItem("userData", JSON.stringify(userData));
+
+												toast = vm.$toast.success("上传成功");
+												vm.$toast.clear();
+												plus.webview
+												plus.webview.getWebviewById("personal").reload(false);
+												plus.webview.currentWebview().reload(false); //true 设置使用缓存，加快读取速度
+											} else { //上传失败
+												vm.$toast.fail("上传失败：" + status);
+												vm.$toast.clear();
+											}
+										}
+									);
+									task.addFile(imgUrl, {
+										key: "imgUrl"
+									});
+									task.start();
+									vm.showAlert = false;
+								}).catch(() => {
+									// on cancel
+								});        
+							});      
+						},  function(e) {}, {
+							index: 1,
+							filename: "_doc/camera/"
+						}); //选择主摄像头，路径保存到_doc/camera/下
+						//plus.io.resolveLocalFileSystemURL( url, succesCB, errorCB );//通过url获取 _doc/camera/下的图片
+					} else if(item.id == 2) {
+						// 从相册中选择图片
+						plus.gallery.pick(function(path) {
+							//成功选择回调 path是图片路径
+							vm.$dialog.confirm({
+								title: '提示',
+								message: '您确定上传该图片作为头像吗?'
+							}).then(() => {
+								var toast = vm.$toast.loading({
+									duration: 0, // 持续展示 toast
+									forbidClick: true, // 禁用背景点击
+									message: '正在上传'
+								});
+								//开始上传任务
+								var task = plus.uploader.createUpload("http://dsapi.ysd3g.com/api/uploadavatarimage?key=" + vm.userKey + "", {
+										method: "POST",
+										blocksize: 204800,
+										priority: 100
+									}, //最大上传大小200k,任务优先级100
+									function(t, status) {
+										//上传成功
+										if(status == 200) {
+											var responseText = JSON.parse(task.responseText);
+											//plus.storage.setItem("imgUrl",responseText.AvatarImage);//头像上传成功重新赋值
+											var userData = JSON.parse(plus.storage.getItem("userData"));
+											userData.AvatarImage = responseText.AvatarImage; //头像上传成功重新赋值
+											plus.storage.setItem("userData", JSON.stringify(userData));
+											vm.$toast.success("上传成功");
+											vm.$toast.clear();
+											plus.webview.currentWebview().reload(false); //true 设置使用缓存，加快读取速度
+											plus.webview.getWebviewById("personal").reload(false);
+										} else { //上传失败
+											vm.$toast.fail("上传失败：" + status);
+											vm.$toast.clear();
+										}
+									}
+								);
+								task.addFile(path, {
+									key: "imgUrl"
+								});
+								task.start();
+								vm.showAlert = false;
+							}).catch(() => {
+								// on cancel
+							});
+						}, function(e) {
+							//选择图片错误回调
+							var code = e.code; // 错误编码
+							var message = e.message; // 错误描述信息
+							vm.$toast.fail(message);
+						}, {
+							filter: "image"
+						}); //filter 默认过滤其他文件，只剩图片
+					} else {
+						this.$toast.fail("选择了错误的选项!");
+					}
+				},
+				updateName() { //修改昵称
+					plus.webview.create("../myCenter/updateName.html", "updateName", {}, {
+						"nickName": this.userData.NickName
+					}).show("slide-in-left");
+				},
+				updatePhone() { //修改手机号
+					plus.webview.create("../myCenter/updatePhone.html", "updatePhone", {}, {
+						"phone": this.userData.Phone
+					}).show("slide-in-left");
+				},
+				returnPage() {
+					plus.webview.close(plus.webview.currentWebview());
+				},
+				onCancel() { //取消上传
+					this.$toast.fail("取消上传");
+				}
+			}
+		})
+	</script>
+
+</html>

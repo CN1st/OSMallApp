@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+	</head>
+
+	<body>
+		<div id="app">
+			<van-nav-bar title="设置" style="background-color:#FF0000;padding-top: 10px;color: white;">
+				<van-icon name="arrow-left" style="color: white;" slot="left" @click="returnPage"></van-icon>
+			</van-nav-bar>
+			<div style="padding-top: 10px;background-color: gainsboro;">
+				<van-cell-group>
+					<van-cell title="修改登录密码" is-link @click="updatePwd"></van-cell>
+					<van-cell title="清理缓存" is-link @click="clear"></van-cell>
+				</van-cell-group>
+
+			</div>
+			<div style="text-align: center;">
+				<van-button size="large" style="margin-top: 20px;color: white;width: 90%;" type="danger" @click="logOut">退出登录</van-button>
+			</div>
+
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+
+				},
+				methods: {
+					returnPage() {
+						plus.webview.hide(plus.webview.currentWebview());
+					},
+					logOut() {//退出
+						this.$dialog.confirm({
+								title: "提示信息",
+								message: "确定要退出吗?"
+							}).then(() => {
+								ajax({
+									url: "http://dsapi.ysd3g.com/API/Logout",
+									dataType: "jsonp",
+									data: {
+										key: plus.storage.getItem("key")
+									},
+									success(res) {
+										if(res.Error) {
+											vm.$toast.fail(res.Msg);
+											plus.storage.clear();
+										} else {
+											plus.webview.create("../homePage.html").show();
+											plus.storage.clear();
+										}
+									}
+								});
+							}).
+							catch(() => {
+								this.$toast.fail("取消操作");
+							});
+					},
+					updatePwd() {//修改密码
+						plus.webview.create("../myCenter/changepwd.html", "changepwd").show();
+					},
+					clear() {//清楚缓存
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/ClearCache",
+							dataType: "jsonp",
+							data: {
+								cacheKey: "key"
+							},
+							success(res) {
+								console.log(JSON.stringify(res));
+							}
+						})
+					}
+				}
+			});
+		</script>
+	</body>
+
+</html>

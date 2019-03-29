@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+	</head>
+	<style>
+		.head-myAddress {
+			background-color: #FF0000;
+			padding-top: 10px;
+			color: white;
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar class="head-myAddress" title="收货地址">
+					<van-icon name="arrow-left" slot="left" style="color: white;" @click="returnPage"></van-icon>
+					<span v-show="isShow" style="color: white;" slot="right" @click="submit">完成</span>
+					<span v-show="!isShow" style="color: white;" slot="right" @click="del">删除</span>
+				</van-nav-bar>
+			</div>
+
+			<div>
+				<van-address-list v-model="chosenAddressId" :list="list" @add="addAddress" @edit="editAddress">
+
+				</van-address-list>
+			</div>
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					chosenAddressId: 0,
+					list: [],
+					isShow: false
+				},
+				methods: {
+					addAddress() { //添加地址
+						if(plus.webview.getWebviewById("addAddress") == null) {
+							plus.webview.create("addAddress.html", "addAddress").show("slide-in-left");
+						} else {
+							plus.webview.show("addAddress", "slide-in-left");
+						}
+					},
+					editAddress(item, index) { //修改地址
+						plus.webview.create("updateAddress.html", "updateAddress", {}, {
+							"addressId1": item.id
+						}).show();
+					},
+					returnPage() { //返回上个页面
+						plus.webview.hide(plus.webview.currentWebview());
+					},
+					del() { //删除地址
+						this.$dialog.confirm({
+							title: "提示信息",
+							message: "确定要删除选中的地址吗?"
+						}).then(() => {
+							ajax({
+								url: "http://dsapi.ysd3g.com/api/DeleteShippingAddress",
+								dataType: "jsonp",
+								data: {
+									key: plus.storage.getItem("key"),
+									addressId: vm.chosenAddressId
+								},
+								success: function(res) {
+									if(res.Error) {
+										vm.$toast.fail(res.Msg);
+									} else {
+										vm.$toast.success(`删除成功`);
+										for(var i = 0; i < vm.list.length; i++) {//删除已经删除的地址
+											if(vm.list[i].id == vm.chosenAddressId) {
+												vm.list.splice(i, 1);
+											}
+										}
+										for(var i = 0; i < vm.list.length; i++) {//选择默认地址
+											if(vm.list[i].IsDefault) {
+												vm.chosenAddressId = vm.list[i].id
+											}
+										}
+									}
+								}
+							});
+						}).catch(() => {
+							this.$toast.fail(`取消删除`);
+						});
+					},
+					submit() { //提交订单
+						var isShow_pay = plus.webview.currentWebview().isShow
+						if(isShow_pay) {
+							plus.webview.create("../shopping/pay.html", "pay", {}, {
+								addressId: this.chosenAddressId,
+								pid: plus.webview.currentWebview().pid,
+								isShow: isShow_pay
+							}).show();
+						} else {
+							plus.webview.create("../shopping/pay.html", "pay", {}, {
+								addressId: this.chosenAddressId,
+								pids: plus.webview.currentWebview().pids,
+								isShow: isShow_pay
+							}).show();
+						}
+					}
+				},
+				mounted() {
+					ajax({
+							url: "http://dsapi.ysd3g.com/API/MyShippingAddressList",
+							dataType: "jsonp",
+							data: {
+								key: plus.storage.getItem("key")
+							},
+							success(res) {
+								vm.list = vm.list.concat(res.Data);
+								for(let i = 0; i < res.Data.length; i++) {
+									if(res.Data[i].IsDefault) {
+										vm.chosenAddressId = res.Data[i].id
+									}
+								}
+							}
+						}),
+						this.isShow = plus.webview.currentWebview().isShow_address;
+				}
+			})
+		</script>
+	</body>
+
+</html>

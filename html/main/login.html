@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<link rel="stylesheet" href="../../font/iconfont.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_ma9999uyuin.js" ></script>
+		<style>
+			img {
+				position: absolute;
+				width: 90px;
+				height: 90px;
+				top: 40%;
+				left: 38%;
+			}
+			
+			.com-img {
+				position: relative;
+				width: 100%;
+				height: 180px;
+			}
+			
+			body {
+				background-color: white;
+			}
+			
+			.textHight {
+				height: 60px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app">
+			<div class="com-img">
+				<img src="../../img/logo_200.png" />
+			</div>
+			<div>
+				<table frame="below">
+					<van-cell-group>
+						<tr>
+							<van-field label="手机号码" left-icon="phone" class="textHight" v-model="account"></van-field>
+						</tr>
+						<tr>
+							<van-field type="password" label="登录密码" left-icon="home" class="textHight" v-model="password"></van-field>
+						</tr>
+					</van-cell-group>
+				</table>
+				<p style="text-indent: 65%;color:#333333;" @click="findPwd">忘记密码？</p>
+				<van-button type="danger" style="margin-left: 10%;width: 300px;" @click="login">立即登录</van-button>
+				<p style="text-align: center;color:#333333;" @click="showRegister">还没有注册？立即注册</p>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		var vm = new Vue({
+			el: "#app",
+			data: {
+				account: "",
+				password: ""
+			},
+			methods: {
+				login() {
+					ajax({
+						url: "http://dsapi.ysd3g.com/api/login",
+						dataType: "jsonp",
+						data: {
+							account: vm.account,
+							password: vm.password
+						},
+						success(res) {
+							if(res.Error) {
+								vm.$toast.fail(res.Msg);
+							} else {
+								var info=JSON.stringify(res.UserData);
+								plus.storage.setItem("userData",info);
+								plus.storage.setItem("key",res.Key)
+								plus.webview.create("../homePage.html","homePage").show();
+							}
+						}
+					})
+				},
+				showRegister(){
+					plus.webview.create("register.html","register").show("slide-in-left");
+				},
+				findPwd(){
+					plus.webview.create("phoneverification.html","phone").show("slide-in-left");
+				}
+			}
+		})
+	</script>
+
+</html>

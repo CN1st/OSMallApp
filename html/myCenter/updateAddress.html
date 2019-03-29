@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/address.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js"></script>
+	</head>
+	<style>
+		.head-address {
+			background-color: #FF4444;
+			padding-top: 10px;
+			color: white;
+		}
+		
+		.body-address {
+			padding-top: 15px;
+			background-color: gainsboro;
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<div span="24">
+				<van-nav-bar title="修改收货地址" style="background-color:red;padding-top: 10px;color: white;">
+					<van-icon style="color: white;" name="arrow-left" slot="left" @click="returnPage" />
+				</van-nav-bar>
+
+			</div>
+			<div span="24">
+				<van-address-edit :area-list="areaList" show-set-default :address-info="addressInfo" @save="onSave" />
+			</div>
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					areaList: address,
+					addressInfo: ""
+				},
+				methods: {
+					onSave(content) { //保存修改后的地址
+						ajax({
+							url: "http://dsapi.ysd3g.com/API/EditShippingAddress",
+							dataType: "jsonp",
+							data: {
+								key: plus.storage.getItem("key"),
+								addressId: content.id,
+								name: content.name,
+								phone: content.tel,
+								districtCode: content.areaCode,
+								address: content.addressDetail,
+								isdefault: content.isDefault
+							},
+							success(res) {
+								if(res.Error) {
+									vm.$toast.fail("修改失败");
+								} else {
+									vm.$toast.success("修改成功");
+									plus.webview.getWebviewById("myShippingAddress").reload(false);
+									plus.webview.close(plus.webview.currentWebview());
+								}
+							}
+						})
+					},
+					returnPage() {
+						plus.webview.close(plus.webview.currentWebview());
+					}
+				},
+				mounted() {
+					ajax({
+						url: "http://dsapi.ysd3g.com/API/EditLoadingData",
+						dataType: "jsonp",
+						data: {
+							key: plus.storage.getItem("key"),
+							addressId: plus.webview.currentWebview().addressId1
+						},
+						success(res) {
+							if(res.Error) {
+								vm.$toast.fail(res.Msg);
+							} else {
+								vm.addressInfo = {
+									id: res.Data.Id,
+									name: res.Data.Name,
+									tel: res.Data.Phone,
+									province: res.Data.ProvinceCode,
+									city: res.Data.CityCode,
+									county: res.Data.DistrictCode,
+									areaCode: res.Data.AreaCode,
+									addressDetail: res.Data.DetailedAddress,
+									isDefault: res.Data.IsDefault
+								};
+							}
+						}
+					})
+				}
+			});
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js" ></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js" ></script>
+	</head>
+	<style>
+		.head-paysuccess {
+			background-color: #FF4444;
+			padding-top: 10px;
+			color: white;
+		}
+		
+		.body-paysuccess {
+			margin-top:40px;
+			width: 100%;
+			text-align: center;
+		}
+		
+	</style>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar class="head-paysuccess" title="支付成功">
+					<van-icon style="color: white;" name="arrow-left" slot="left"/>
+				</van-nav-bar>
+			</div>
+			
+			<div  class="body-paysuccess">
+				<van-icon name="passed" size="50px" style="color:green;"></van-icon>
+				<h5>成功支付<span v-text="totalPrice"></span>元</h5>
+				<van-button size="large" type="danger" style="text-align: center;width: 90%;" @click="skip">返回首页</van-button>
+			</div>
+			
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					totalPrice:plus.webview.currentWebview().totalPrice
+				},
+				methods:{
+					skip(){//跳转页面
+						plus.webview.show("homePage","slide-in-left");
+					}
+				}
+			});
+		</script>
+	</body>
+                                                                                                                
+</html>

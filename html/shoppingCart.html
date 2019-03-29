@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<script type="text/javascript" src="../js/vue.js"></script>
+		<script type="text/javascript" src="../js/vant.js"></script>
+		<script type="text/javascript" src="../js/vue-lazyload.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../js/listener_main.js"></script>
+		<link rel="stylesheet" href="../css/vant.css" />
+		<style>
+			.com-header {
+				height: 80px;
+			}
+			
+			.com-title {
+				z-index: 9999;
+				position: fixed;
+				width: 100%;
+				height: 80px;
+				background: #FF4443;
+				color: #FAFAFA;
+			}
+			
+			.com-title1 {
+				z-index: 9999;
+				position: fixed;
+				margin-top: 147%;
+				width: 100%;
+				height: 50px;
+				background: #FBFBFB;
+				color: #FAFAFA;
+			}
+			
+			.com-main {
+				width: 100%;
+				margin-bottom: 28%;
+			}
+			
+			.list {
+				margin-top: 2px;
+			}
+			
+			.item1 {
+				height: 90px;
+				margin-top: 8px;
+				background: white;
+				margin-left: 4%;
+				margin-top: -12%;
+			}
+			
+			.item1 img {
+				height: 96%;
+				width: 86px;
+				float: left;
+				margin-top: 3px;
+				margin-left: 8px;
+			}
+			
+			.listName {
+				margin-left: 5px;
+				color: #000000;
+			}
+			
+			.pLeft {
+				width: 25%;
+				height: 100%;
+				float: left;
+				margin-left: 3%;
+			}
+			
+			.pcenter {
+				width: 55%;
+				height: 100%;
+				float: left;
+			}
+			
+			.pRight {
+				width: 20%;
+				float: right;
+			}
+			
+			.com-title {
+				z-index: 9999;
+				position: fixed;
+				width: 100%;
+				height: 80px;
+				background: #FF0000;
+				color: #FAFAFA;
+			}
+			[v-cloak] { display:none}
+		</style>
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<van-row>
+				<!--导航栏 -->
+				<van-col span="24" class="com-header">
+					<div class="com-title">
+						<!--获取商品数量{{}}-->
+						<div style="text-align: center;padding-top: 40px;">购物车</div>
+						<div style="float: right;margin-top: -20px;font-size: 13px;margin-right: 10px;" @click="clearShopCart()">清空购物车</div>
+					</div>
+				</van-col>
+				<!--栏目 -->
+				<van-col span="24" class="com-main">
+					<!--购物车无商品 -->
+					<div v-show="isShow">
+						<div style="text-align: center;color: #C9C9C9;font-size: 30px;margin-top: 200px;">
+							<van-icon name="cart" />
+						</div>
+						<div style="color:#C9C9C9 ;text-align: center;">购物车空空如也</div>
+					</div>
+					<!--购物车有商品 -->
+					<div v-show="isShow==false">
+						<div class="list" v-for="(pl,index) in d">
+							<van-checkbox v-model="pl.checked" style="margin-top: 10%; margin-left: 2%;" class="checkbox" @change="select(pl.Id,pl.RealPrice,pl.buyCount,pl.checked)" :value="pl.Id"></van-checkbox>
+							<div class="item1">
+								<!--图片区域-->
+								<div class="pLeft" @click="skipPd(pl.Id)">
+									<img :src="pl.CoverImage" onerror="this.src='../img/product_default.jpg'" />
+								</div>
+								<!--文字 计数器-->
+								<div class="pcenter">
+									<div style="float: left;height: 50%;width:100%;overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+										<span class="listName" style="margin-left:25px;" v-text="pl.Name"></span>
+									</div>
+									<div style="float: left;height: 50%;width:100%;">
+										<div style="margin:13px 0px 0px 60px;">
+											<van-stepper v-model="pl.buyCount" @plus="add(pl.Id, pl.buyCount+1)" @minus="minus(pl.Id, pl.buyCount-1)" />
+										</div>
+									</div>
+								</div>
+								<!--价格 删除图标-->
+								<div class="pRight">
+									<div style="height: 50%;margin-top: -90px;">
+										<small style="color: red;font-size: 15px;margin-left: 20px;">￥</small>
+										<span style="color: red;font-size: 13px;"><span v-text="pl.RealPrice"></span></span>
+									</div>
+									<div style="float: left;height: 50%;width:100%;">
+										<div style="margin-top: -52px;">
+											<span style="float:right;">x&nbsp<span v-text="pl.buyCount"></span></span>
+											<!--删除图标-->
+											<van-button type="default" style="width: 100%;height: 30px;" @click="btn_delete(pl.Id)">
+												<van-icon name="delete" />
+											</van-button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!--总价结算-->
+						<div class="settleAccounts">
+							<van-submit-bar :price="totalMoney*100" button-text="提交订单" @submit="onSubmit" />
+							<van-checkbox v-model="checked" @change="selectAll">全选</van-checkbox>
+						</div>
+					</div>
+			</van-row>
+		</div>
+		<script type="text/javascript">
+			Vue.use(VueLazyload);
+			var vm = new Vue({
+				el: '#app',
+				data: {
+					active: 0,
+					d: [],
+					p: 1,
+					jsonData: {},
+					isShow: true,
+					phone: JSON.parse(plus.storage.getItem("userData")).Phone,
+					buyCount: 1,
+					checked: "",
+					checkedData: []
+				},
+				methods: {
+					onSubmit() { //提交订单
+						plus.webview.create("shopping/pay.html", "pay", {}, {
+							pids: vm.checkedData,
+							isShow: false,
+							address: true
+						}).show("slide-in-left");
+					},
+					clearShopCart() {
+						this.$dialog.confirm({
+							title: '确认框',
+							message: '确定要清除购物车吗？'
+						}).then(() => {
+							localStorage.removeItem(this.phone);
+							this.$toast.success("清除成功");
+							this.d = [];
+						}).catch(() => {
+							this.$toast.fail("点击取消");
+						});
+					},
+					add(id, num) { //购物车数量增加
+						var goodsArr = JSON.parse(localStorage.getItem(vm.phone)); //购物车内的商品
+						for(var i = 0; i < goodsArr.length; i++) { //遍历商品
+							if(goodsArr[i].goodsId == id) {
+								goodsArr[i].buyCount += 1; //商品数量+1
+								localStorage.setItem(vm.phone, JSON.stringify(goodsArr));
+							}
+						}
+					},
+					minus(id, num) { //购物车数量减少
+						var goodsArr = JSON.parse(localStorage.getItem(vm.phone)); //购物车内的商品
+						for(var i = 0; i < goodsArr.length; i++) { //遍历商品
+							if(goodsArr[i].goodsId == id) {
+								goodsArr[i].buyCount -= 1; //商品数量-1
+								localStorage.setItem(vm.phone, JSON.stringify(goodsArr));
+							}
+						}
+					},
+					btn_delete(id) { //删除购物车商品
+						this.$dialog.confirm({
+							title: '删除',
+							message: '是否确定删除'
+						}).then(() => {
+							var goodsArr = JSON.parse(localStorage.getItem(vm.phone)); //购物车内的商品
+							for(var i = 0; i < goodsArr.length; i++) { //遍历商品
+								if(goodsArr[i].goodsId == id) {
+									goodsArr.splice(i, 1); //删除此商品
+									localStorage.setItem(vm.phone, JSON.stringify(goodsArr));
+									//刷新页面
+									vm.d.splice(i, 1);
+									vm.$toast.fail("已删除");
+								}
+							}
+						}).catch(() => {
+							vm.$toast.fail("已取消");
+						});
+					},
+					skipPd(id) {
+						plus.webview.create("ProductDetail.html", "ProductDetail", {}, {
+							Id: id
+						}).show("slide-in-left");
+					},
+					select(id, price, buyCount, checked) {//选中后触发
+						if(checked) {
+							var cd = {
+								goodsId: id,
+								buyCount: buyCount
+							}
+							this.checkedData = this.checkedData.concat(cd)
+						} else {
+							for(var i = 0; i < this.checkedData.length; i++) {
+								if(this.checkedData[i].goodsId == id) {
+									this.checkedData.splice(i, 1);
+								}
+							}
+						}
+					},
+					selectAll() {//全选
+						for(var i = 0; i < this.d.length; i++) {
+							this.d[i].checked = this.checked;
+						}
+					}
+				},
+				computed: {
+					totalMoney() {
+						var money = 0;
+						for(var i = 0; i < this.d.length; i++) {
+							if(this.d[i].checked) {
+								money += this.d[i].RealPrice * this.d[i].buyCount
+							}
+						}
+						return money;
+					}
+				},
+				mounted() {
+					var userData = JSON.parse(plus.storage.getItem("userData"));
+					var data1 = JSON.parse(localStorage.getItem(userData.Phone)); //购物车商品
+					var Id;
+					var Name;
+					var CoverImage;
+					var RealPrice;
+					if(data1.length > 0) {
+						this.isShow = false;
+						for(var i = 0; i < data1.length; i++) {
+							ajax({
+								url: "http://dsapi.ysd3g.com/API/GoodsDetail",
+								dataType: "jsonp",
+								data: {
+									gId: data1[i].goodsId
+								},
+								success(res) {
+									if(res.Error) {
+										vm.$toast.fail(res.Msg);
+									} else {
+										Id = res.Detail.Id;
+										Name = res.Detail.Name;
+										CoverImage = res.Detail.CoverImage;
+										RealPrice = res.Detail.RealPrice;
+										for(var j = 0; j < data1.length; j++) {
+											if(Id == data1[j].goodsId) {
+												vm.buyCount = data1[j].buyCount;
+											}
+										}
+										vm.jsonData = {
+											"Id": Id,
+											"Name": Name,
+											"CoverImage": CoverImage,
+											"RealPrice": RealPrice,
+											"buyCount": vm.buyCount,
+											"checked": false
+										}
+										vm.d = vm.d.concat(vm.jsonData);
+									}
+								}
+							});
+						}
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

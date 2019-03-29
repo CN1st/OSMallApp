@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../css/vant.css" />
+		<script type="text/javascript" src="../js/vue.js"></script>
+		<script type="text/javascript" src="../js/vant.js"></script>
+		<script type="text/javascript" src="../js/vue-lazyload.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../js/listener_main.js"></script>
+		<style type="text/css">
+			body {
+				background: #DCDCDC;
+			}
+			
+			.circle {
+				height: 90px;
+				width: 100%;
+				border: 1px solid white;
+				border-radius: 10px;
+				background-color: white;
+				margin-top: 0%;
+			}
+			
+			.js {
+				margin-top: 5px;
+				float: left;
+				margin-left: 20px;
+			}
+			
+			.js img {
+				margin-left: 20px;
+			}
+			
+			.circle1 {
+				border: 1px solid white;
+				background: white;
+				width: 95%;
+				margin: 0 auto;
+				margin-top: 6px;
+				border-radius: 20px;
+				height: 40px;
+				font-size: 10px;
+			}
+			
+			.rm {
+				margin-top: 10px;
+				height: 230px;
+				width: 100%;
+				background-color: white;
+			}
+			
+			.zx {
+				margin: 10px 0px 0px 10px;
+				color: red;
+			}
+			
+			.gf {
+				border: 2px solid #F1F1F1;
+				border-bottom: 0px;
+				border-top: 5px;
+				color: #333333;
+			}
+			
+			.gd {
+				color: #333333;
+				display: block;
+				padding-left: 85%;
+				margin-top: -20px;
+			}
+			
+			.rmd {
+				border: 3px solid red;
+				margin-left: 5px;
+				border-bottom: 0px;
+				border-top: 0px;
+				border-right: 0px;
+				padding-top: 5px;
+			}
+			
+			.productList {
+				border: 3px solid blue;
+				border-bottom: 0px;
+				border-top: 0px;
+				border-right: 0px;
+				margin-left: 5px;
+				padding-top: 5px;
+				background: white;
+			}
+			
+			.products {
+				margin-top: 5px;
+				/*height: 100%;*/
+			}
+			
+			.item img {
+				width: 113px;
+				float: left;
+				margin-left: 5px;
+			}
+			
+			.name {
+				color: #000000;
+				font-size: 13px;
+				width: 113px;
+				height: 30px;
+				overflow: hidden;
+				textOverflow: ellipsis;
+				whiteSpace: nowrap;
+				padding-top: 5px;
+			}
+			
+			.searchAll {
+				float: left;
+				margin-top: 6px;
+			}
+			
+			.item1 {
+				height: 90px;
+				margin-top: 5px;
+				background: white;
+			}
+			
+			.item1 img {
+				width: 90px;
+				float: left;
+				margin-left: 5px;
+			}
+			
+			.listName {
+				margin-left: 5px;
+				color: #000000;
+			}
+			
+			.goodsData {
+				background-color: white;
+				margin-top: 10px;
+				height: 35px;
+			}
+			
+			[v-cloak] {
+				display: none
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<van-row>
+				<div style="position: fixed;width: 100%;z-index: 999;">
+					<van-col span="24">
+						<van-search style="background:#FF0000 ;height:60px;" v-model="value" placeholder="请输入搜索关键词" show-action @search="onSearch">
+							<div slot="action" @click="onSearch">
+								<van-icon name="chat" style="padding-left: 10px;padding-top: 10px;color:white;font-size: 20px;" />
+							</div>
+						</van-search>
+					</van-col>
+				</div>
+				<van-col span="24">
+					<div class="swipe-demo" style="margin-top: 60px;">
+						<van-swipe :autoplay="3000">
+							<van-swipe-item v-for="item in imgList">
+								<img :src="item.ImageUrl" style="width: 100%" />
+							</van-swipe-item>
+						</van-swipe>
+					</div>
+					<div class="circle">
+						<span class="js" v-for="hgtl in data.HotGoodsTypeList">
+							<div @click="skipCat(hgtl.Id)">
+								<img :src="hgtl.ImageName.src" onerror="this.src='../img/product_default.jpg'" style="height: 50px;width: 50px;margin-left: 6px;" @click="Detail"/>
+								<div v-text="hgtl.Name"></div>
+							</div>
+						</span>
+					</div>
+
+					<div class="circle1">
+						<div style="color: red; font-weight: bold; display: inline-block; margin-left: 7px;  font-size: 13px;">资讯</div>
+						<div @click="skipZx" style="display: inline-block;width: 250px; height: 20px; margin-left: 7px;margin-top: 11px;border:1px solid #C9C9C9;font-size: 15px;border-bottom: 0px;border-top: 0px;" v-text="informationTitle"></div>
+						<div style="display: inline-block; margin-right: 11px; float: right;font-size: 15px;margin-top: 11px;" @click="skipZXList">更多</div>
+					</div>
+					<div class="rm">
+						<div class="rmd">&nbsp;热门推荐</div>
+						<div class="searchAll" v-for="gr in data.GoodsRecommendList">
+							<div class="item" @click="skip(gr.Id)">
+								<img :src="gr.GoodsImageUrl.src" onerror="this.src='../img/product_default.jpg'" /><br />
+								<div class="name" style="margin-left: 7px;" v-text="gr.Name"></div>
+								<br />
+								<span><small style="color: red;">￥</small>
+									<span style="color: red;" v-text="gr.RealPrice"></span>
+								<span></span>
+								</span><br />
+							</div>
+						</div>
+					</div>
+					<div class="products">
+						<div class="productList">&nbsp;商品列表</div>
+						<div class="list" v-for="pl in productList">
+							<div class="item1" @click="skip(pl.Id)">
+								<img :src="pl.GoodsImageUrl.src" onerror="this.src='../img/product_default.jpg'" />
+								<div style="display: inline-block; background: white; margin-left: 5px; width: 70%;">
+									<div style="margin-bottom: 5px;">
+										<div v-text="pl.Name" style="overflow: hidden; white-space: nowrap; width: 100%; font-size: 13px;"></div>
+									</div>
+									<div>
+										<span v-text="'￥' + pl.RealPrice.toFixed(2)" style="color: red; font-weight: bold;"></span>
+										<span v-text="'价格￥' + pl.MarketPrice.toFixed(2)" style="text-decoration: line-through; font-size: 10px; color: #6C6C6C;"></span>
+										<div style="height: 10px;"></div>
+										<div></div>
+										<div v-text="'累计销量' + pl.VirtualSaleCount" style="font-size: 9px; color:#666666; display: inline-block;"></div>
+										<div v-text="pl.BrowseCount + '次浏览'" style="float: right; font-size:9px; color: #666666; margin-right: 10px; display: inline-block;margin-top: 8px;"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div style="text-align: center;">
+							<span style="text-decoration: line-through; color: #ccc;">
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						</span>
+							<span style="color: #ccc; font-size: 15px;">
+							无商品可加载
+						</span>
+							<span style="text-decoration: line-through; color: #ccc;">
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						</span>
+						</div>
+				</van-col>
+				<van-col style="margin-top: 65px;">
+					<van-tabbar v-model="active" @change="onChange">
+						<van-tabbar-item icon="shop">首页</van-tabbar-item>
+						<van-tabbar-item icon="points-mall">分类</van-tabbar-item>
+						<van-tabbar-item icon="cart">购物车</van-tabbar-item>
+						<van-tabbar-item icon="contact">个人中心</van-tabbar-item>
+					</van-tabbar>
+				</van-col>
+			</van-row>
+
+			</div>
+			<script type="text/javascript">
+				Vue.use(VueLazyload);
+				var vm = new Vue({
+					el: '#app',
+					data: {
+						value: '',
+						active: 0,
+						imgList: [],
+						data: "",
+						p: 1,
+						productList: [],
+						informationTitle: null,
+						intervalId: null,
+						informationList: [],
+						informationId: 0
+
+					},
+					mounted() {
+						ajax({
+								url: "http://dsapi.ysd3g.com/api/IndexData",
+								dataType: "jsonp",
+								data: {
+									p: 1
+								},
+								success(res) {
+									vm.data = res.Data;
+									vm.imgList = res.Data.CarouselFigureList;
+									vm.informationList = res.Data.InformationList;
+									vm.informationTitle = res.Data.InformationList[0].Title;
+									if(vm.informationList.length > 1) {
+										vm.intervalId = setInterval(() => {
+											vm.informationList.push(vm.informationList.shift());
+											vm.informationTitle = res.Data.InformationList[0].Title;
+											vm.informationId = res.Data.InformationList[0].Id;
+										}, 3000);
+									}
+								}
+							}),
+							ajax({
+								url: "http://dsapi.ysd3g.com/api/IndexGoodsData",
+								dataType: "jsonp",
+								data: {
+									p: 1
+								},
+								success(res) {
+									vm.productList = res.Data;
+								}
+							})
+					},
+					methods: {
+						onSearch() {
+							ajax({
+								url: "http://dsapi.ysd3g.com/api/GoodsSearch",
+								dataType: "jsonp",
+								data: {
+									name: vm.value
+								},
+								"success": function(res) {
+									if(res.Data.length > 0) {
+										vm.productList = res.Data;
+									} else {
+										vm.$toast.fail({
+											message: "没有数据",
+											duration: 500
+										});
+									}
+								}
+							})
+						},
+						onChange(active) {
+							switch(active) {
+								case 0:
+									if(plus.webview.getWebviewById("homePage") == null) {
+										plus.webview.create("homePage.html", "homePage").show("slide-in-left");
+										removeEventListener();
+									} else {
+										plus.webview.show("homePage", "slide-in-left");
+									}
+									break;
+								case 1:
+									if(plus.webview.getWebviewById("category") == null) {
+										plus.webview.create("category.html", "category", {
+											bottom: "50px",
+											top: "0px"
+										}).show("slide-in-left");
+										removeEventListener();
+									} else {
+										plus.webview.show("category", "slide-in-left");
+									}
+									break;
+								case 2:
+									if(plus.storage.getItem("key") == null) {
+										this.$dialog.confirm({
+											title: "提示",
+											message: "是否登录"
+										}).then(() => {
+											plus.webview.create("main/login.html", "login").show("slide-in-left");
+										}).catch(() => {
+											this.$toast.fail(`取消登录`);
+											this.active = 0;
+										});
+									} else {
+										plus.webview.create("shoppingCart.html", "shoppingCart", {
+											bottom: "50px",
+											top: "0px"
+										}).show("slide-in-left");
+										removeEventListener();
+									}
+									break;
+								case 3:
+									if(plus.storage.getItem("key") == null) {
+										this.$dialog.confirm({
+											title: "提示",
+											message: "是否登录"
+										}).then(() => {
+											plus.webview.create("main/login.html", "login").show("slide-in-left");
+										}).catch(() => {
+											this.$toast.fail(`取消登录`);
+											this.active = 0;
+										});
+									} else {
+										plus.webview.create("personal.html", "personal", {
+											bottom: "50px",
+											top: "0px"
+										}).show("slide-in-left");
+										removeEventListener();
+									}
+									break;
+							}
+						},
+						skip(res) {
+							plus.webview.create("ProductDetail.html", "ProductDetail", {}, {
+								Id: res
+							}).show("slide-in-left");
+						},
+						skipZx() {
+							plus.webview.create("information.html", "information", {}, {
+								Id: this.informationId
+							}).show("slide-in-left");
+						},
+						skipZXList() {
+							plus.webview.create("informationList.html", "infomationList").show("slide-in-left");
+						},
+						Detail() {
+							plus.webview.create("category.html", "category", {
+								bottom: "50px",
+								top: "0px"
+							}, {}).show("slide-in-left");
+						},
+						skipCat(id) {
+							plus.webview.create("category.html", "category", {}, {
+								catId: id
+							}).show("slide-in-left");
+						}
+					}
+				})
+			</script>
+	</body>
+
+</html>

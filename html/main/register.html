@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../../css/vant.css" />
+		<script type="text/javascript" src="../../js/vue.js"></script>
+		<script type="text/javascript" src="../../js/vant.js"></script>
+		<script type="text/javascript" src="../../js/ajax.js" ></script>
+		<script src="html5plus://ready"></script>
+		<script type="text/javascript" src="../../js/listener_other.js" ></script>
+	</head>
+
+	<body>
+		<div id="app">
+			<div span="24">
+				<van-nav-bar title="注册用户" style="background-color:red;padding-top: 10px;color: white;">
+					<van-icon name="arrow-left" style="color: white;" slot="left" @click="returnPage"></van-icon>
+				</van-nav-bar>
+			</div>
+			<div span="24" style="padding-top: 20px; background-color: gainsboro;">
+				<van-cell-group>
+					<van-field v-model="value" placeholder="手机号码"></van-field>
+					<van-field v-model="yzm" placeholder="验证码(6位数字短信验证码)">
+						<van-button slot="button" @click="sendCode" type="danger">发送验证码</van-button>
+					</van-field>
+					<van-field type="password" v-model="pwd" placeholder="登录密码(最少6位)"></van-field>
+					<van-field type="password" v-model="reqpwd" placeholder="确认密码(再次输入登录密码)"></van-field>
+					<van-field v-model="name" placeholder="昵称(最多20个字)"></van-field>
+					<van-field v-model="code" placeholder="县/区Code"></van-field>
+				</van-cell-group>
+			</div>
+			<div style="text-align: center;">
+				<h5>注册会员及表示同意<a href="">《万众雅讯用户注册协议》</a></h5>
+				<van-button size="large" style="width: 90%;" type="danger" @click="register">立即注册</van-button>
+			</div>
+		</div>
+		<script type="text/javascript ">
+			var vm = new Vue({
+				el: "#app",
+				data: {
+					value: "",
+					yzm: "",
+					pwd: "",
+					reqpwd: "",
+					name: "",
+					code:""
+				},
+				methods:{
+					register(){//注册
+						ajax({
+							url:"http://dsapi.ysd3g.com/API/UserRegister",
+							dataType:"jsonp",
+							data:{
+								phone:vm.value,
+								code:vm.yzm,
+								password:vm.pwd,
+								districtCode:vm.code,
+								nickName:vm.name
+							},
+							success(res){
+								if (res.Error) {
+									vm.$toast.fail(res.Msg);
+								} else{
+									vm.$toast.success("注册成功");
+									plus.webview.create("login.html","login").show("slide-in-left");
+								}
+							}
+						})
+					},
+					sendCode(){//发送验证码
+						ajax({
+							url:"http://dsapi.ysd3g.com/API/SendRegisterPhoneCode",
+							dataType:"jsonp",
+							data:{
+								phone:vm.value
+							},
+							success(res){
+								if (res.Error) {
+									vm.$toast.fail(res.Msg);
+								} else{
+									vm.$toast.success(res.Code);
+								}
+							}
+						})
+					},
+					returnPage(){
+						plus.webview.close(plus.webview.currentWebview());
+					}
+				}
+			});
+		</script>
+	</body>
+
+</html>
